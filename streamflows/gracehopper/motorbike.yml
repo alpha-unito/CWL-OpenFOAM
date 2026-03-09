@@ -1,0 +1,95 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../workflows/motorbike-pipeline.cwl
+      settings: ../jobs/job_motorbike.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /prepare_geometry
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /surface_features
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /blockmesh
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: gracehopper
+          service: parallel
+
+      - step: /toposet
+        target:
+          deployment: gracehopper
+          service: parallel
+
+      - step: /restore0_processor
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /patchsummary
+        target:
+          deployment: gracehopper
+          service: parallel
+
+      - step: /potential
+        target:
+          deployment: gracehopper
+          service: sequential
+          
+      - step: /simpleFoam
+        target:
+          deployment: gracehopper
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: gracehopper
+          service: sequential
+          
+      - step: /reconstruct
+        target:
+          deployment: gracehopper
+          service: sequential
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-gracehopper
+  gracehopper:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: gracehopper
+          nodes: "1"
+          file: /beegfs/home/daniele.ibba/workflow-openfoam/src/openfoam-cwl/facilities/gracehopper-facility.sh
+
+        parallel:
+          partition: gracehopper
+          nodes: "2"
+          file: /beegfs/home/daniele.ibba/workflow-openfoam/src/openfoam-cwl/facilities/gracehopper-facility.sh
+    workdir: /beegfs/home/daniele.ibba/workflow-openfoam/src/openfoam-cwl/workdir
+

@@ -1,0 +1,46 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  cavity-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/cavity-pipeline.cwl
+      settings: ../../jobs/job_cavity.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+      - step: /blockMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /icoFoam
+        target:
+          deployment: cascadelake
+          service: sequential
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-cascadelake
+  cascadelake:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+
+        parallel:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+    workdir: ../../workdir-cascadelake

@@ -1,0 +1,211 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/motorbike-AllSizes.cwl
+      settings: ../../jobs/job_HPC_motorbike.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /blockMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /reconstruct
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      # the `set_mirror_dict` step is inside the `iter` step, which is inside the `MeshSize` step
+      - step: /MeshSize/iter/set_mirror_dict
+        target:
+          - deployment: cascadelake
+            service: sequential
+          - deployment: cascadelake
+            service: sequential
+          - deployment: epito
+            service: sequential
+        filters:
+          - carmen
+
+      - step: /MeshSize/iter/mirror_mesh
+        target:
+          - deployment: cascadelake
+            service: sequential
+          - deployment: cascadelake
+            service: sequential
+          - deployment: epito
+            service: sequential
+        filters:
+          - carmen
+
+      - step: /MeshSize/cleanup_mesh 
+        target:
+          - deployment: local
+        # target:
+        #   - deployment: broadwell
+        #     service: sequential
+        #   - deployment: cascadelake
+        #     service: sequential
+        #   - deployment: epito
+        #     service: sequential
+        # filters:
+        #   - carmen
+
+      - step: /MeshSize/decompose2
+        target:
+          - deployment: cascadelake
+            service: sequential
+          - deployment: cascadelake
+            service: sequential
+          - deployment: epito
+            service: sequential
+        filters:
+          - carmen
+
+      - step: /MeshSize/potential
+        target:
+          - deployment: cascadelake
+            service: parallel
+          - deployment: cascadelake
+            service: parallel
+          - deployment: epito
+            service: parallel
+        filters:
+          - carmen
+
+      - step: /MeshSize/simpleFoam
+        target:
+          - deployment: cascadelake
+            service: parallel
+          - deployment: cascadelake
+            service: parallel
+          - deployment: epito
+            service: parallel
+        filters:
+          - carmen
+
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-epito
+  cascadelake:
+    type: slurm
+    config:
+      maxConcurrentJobs: 10
+      services:
+        sequential:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+
+        parallel:
+          partition: cascadelake
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/cascadelake-facility.sh
+    workdir: workdir-cascadelake
+
+  broadwell:
+    type: slurm
+    config:
+      maxConcurrentJobs: 10
+      services:
+        sequential:
+          partition: broadwell
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/broadwell-facility.sh
+
+        parallel:
+          partition: broadwell
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/broadwell-facility.sh
+    workdir: ../../workdir-broadwell
+
+  epito:
+    type: slurm
+    config:
+      maxConcurrentJobs: 10
+      services:
+        sequential:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/epito-facility.sh
+
+        parallel:
+          partition: epito
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/epito-facility.sh
+    workdir: ../../workdir-epito
+
+  gracehopper:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: gracehopper
+          nodes: "1"
+          file: ../../facilities/gracehopper-facility.sh
+
+        parallel:
+          partition: gracehopper
+          nodes: "2"
+          file: ../../facilities/gracehopper-facility.sh
+    workdir: ../../workdir
+
+
+bindingFilters:
+  carmen:
+    type: matching
+    config:
+      filters:
+      - target: 
+          deployment: broadwell
+        job:
+        - port: size
+          match: "small"
+      - target:
+          deployment: cascadelake
+        job:
+        - port: size
+          match: "medium"
+      - target:
+          deployment: epito
+        job:
+        - port: size
+          match: "large"
+
+database:
+  type: default 
+  config:
+    connection: /beegfs/home/gmalenza/src/Workflow-openfoam/workflow-openfoam/.streamflow/hybrid/sqlite.db

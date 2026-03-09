@@ -1,0 +1,112 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  cavity-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/cavity3D.cwl
+      settings: ../../jobs/job_cavity3D.yml
+    bindings:
+      - step: /cavity3d/copy_case
+        target:
+          deployment: local
+      
+      - step: /cavity3d/blockMesh
+        target:
+          deployment: gracehopper
+          service: sequential
+
+      - step: /cavity3d/decompose
+        target:
+          deployment: gracehopper
+          service: sequential 
+
+      - step: /cavity3d/renumberMesh
+        target:
+        - deployment: gracehopper
+          service: parallel
+        - deployment: gracehopper
+          service: large
+        filters:
+        - myfilter
+        
+      - step: /cavity3d/multiConv/copy_mesh
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/inject_file
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/icoFoam
+        target:
+        - deployment: gracehopper
+          service: parallel
+        - deployment: gracehopper
+          service: large
+        filters:
+        - myfilter
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-gracehopper
+  gracehopper:
+    type: slurm
+    config:
+      maxConcurrentJobs: 20
+      mounts: 
+      - /beegfs/home/gmalenza/src/workdir-gracehopper
+      services:
+        sequential:
+          partition: gracehopper
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/gracehopper-facility.sh
+
+        parallel:
+          partition: gracehopper
+          nodes: "1"
+          ntasksPerNode: 32
+          file: ../../facilities/gracehopper-facility.sh
+
+        large:
+          partition: gracehopper
+          nodes: "2"
+          ntasksPerNode: 48
+          file: ../../facilities/gracehopper-facility.sh
+    workdir: ../../workdir-gracehopper
+
+
+
+bindingFilters:
+  myfilter:
+    type: matching
+    config:
+      filters:
+      - target:
+          deployment: gracehopper
+          service: parallel
+        job:
+        - port: size
+          match: "small"
+      - target:
+          deployment: gracehopper
+          service: parallel
+        job:
+        - port: size
+          match: "medium"
+      - target:
+          deployment: gracehopper
+          service: large
+        job:
+        - port: size
+          match: "large"
+          
+database:
+  type: default 
+  config:
+    connection: /beegfs/home/gmalenza/src/Workflow-openfoam/workflow-openfoam/.streamflow/gracehopper/sqlite.db

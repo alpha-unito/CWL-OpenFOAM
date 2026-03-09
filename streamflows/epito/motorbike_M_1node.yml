@@ -1,0 +1,94 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/motorbike-pipeline-M.cwl
+      settings: ../../jobs/job_motorbike_M.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /blockMesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /reconstruct
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /set_mirror_dict
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /mirror_mesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /cleanup_mesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /decompose2
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /potential
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /simpleFoam
+        target:
+          deployment: epito
+          service: parallel
+
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-epito
+  epito:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/epito-facility.sh
+
+        parallel:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 16
+          file: ../../facilities/epito-facility.sh
+    workdir: ../../workdir-epito
+

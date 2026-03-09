@@ -1,0 +1,8 @@
+
+sif/
+logs/
+reports/
+.streamflow
+results/
+workdir-*
+

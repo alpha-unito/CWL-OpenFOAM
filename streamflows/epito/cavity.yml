@@ -1,0 +1,45 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  cavity-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/cavity-pipeline.cwl
+      settings: ../../jobs/job_cavity.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /blockMesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /icoFoam
+        target:
+          deployment: epito
+          service: sequential
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-epito
+  epito:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: epito
+          nodes: "1"
+          file: ../../facilities/epito-facility.sh
+
+        parallel:
+          partition: epito
+          nodes: "2"
+          file: ../../facilities/epito-facility.sh
+    workdir: ../../workdir-epito

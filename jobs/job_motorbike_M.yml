@@ -1,0 +1,3 @@
+case_dir:
+  class: Directory
+  path: ../cases/hpc_motorbike_M_v1912

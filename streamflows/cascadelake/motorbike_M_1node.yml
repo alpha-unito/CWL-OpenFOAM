@@ -1,0 +1,94 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/motorbike-pipeline-M.cwl
+      settings: ../../jobs/job_motorbike_M.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /blockMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: cascadelake
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /reconstruct
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /set_mirror_dict
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /mirror_mesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /cleanup_mesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /decompose2
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /potential
+        target:
+          deployment: cascadelake
+          service: parallel
+
+      - step: /simpleFoam
+        target:
+          deployment: cascadelake
+          service: parallel
+
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-cascadelake
+  cascadelake:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+
+        parallel:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 16
+          file: ../../facilities/cascadelake-facility.sh
+    workdir: ../../workdir-cascadelake
+

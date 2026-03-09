@@ -1,0 +1,111 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  cavity-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/cavity3D.cwl
+      settings: ../../jobs/job_cavity3D.yml
+    bindings:
+      - step: /cavity3d/copy_case
+        target:
+          deployment: local
+      
+      - step: /cavity3d/blockMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /cavity3d/decompose
+        target:
+          deployment: cascadelake
+          service: sequential 
+
+      - step: /cavity3d/renumberMesh
+        target:
+        - deployment: cascadelake
+          service: parallel
+        - deployment: cascadelake
+          service: large
+        filters:
+        - myfilter
+
+      - step: /cavity3d/multiConv/copy_mesh
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/inject_file
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/icoFoam
+        target:
+        - deployment: cascadelake
+          service: parallel
+        - deployment: cascadelake
+          service: large
+        filters:
+        - myfilter
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-cascadelake
+  cascadelake:
+    type: slurm
+    config:
+      maxConcurrentJobs: 20
+      # mounts: 
+      # - /beegfs/home/gmalenza/src/workdir-cascadelake
+      services:
+        sequential:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+
+        parallel:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 32
+          file: ../../facilities/cascadelake-facility.sh
+
+        large:
+          partition: cascadelake 
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/cascadelake-facility.sh
+    workdir: ../../workdir-cascadelake
+
+
+bindingFilters:
+  myfilter:
+    type: matching
+    config:
+      filters:
+      - target:
+          deployment: cascadelake
+          service: parallel
+        job:
+        - port: size
+          match: small
+      - target:
+          deployment: cascadelake
+          service: parallel
+        job:
+        - port: size
+          match: medium
+      - target:
+          deployment: cascadelake
+          service: large
+        job:
+        - port: size
+          match: large
+
+database:
+  type: default 
+  config:
+    connection: /beegfs/home/gmalenza/src/Workflow-openfoam/workflow-openfoam/.streamflow/cascadelake/sqlite.db

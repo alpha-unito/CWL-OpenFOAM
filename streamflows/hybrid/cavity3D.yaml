@@ -1,0 +1,185 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  cavity-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/cavity3D.cwl
+      settings: ../../jobs/job_cavity3D.yml
+    bindings:
+      - step: /cavity3d/copy_case
+        target:
+          deployment: local
+      
+      - step: /cavity3d/blockMesh
+        target:
+          deployment: cascadelake
+          service: sequential
+
+      - step: /cavity3d/decompose
+        target:
+          deployment: epito
+          service: sequential 
+
+      - step: /cavity3d/renumberMesh
+        target:
+        - deployment: broadwell
+          service: parallel
+        - deployment: cascadelake
+          service: parallel
+        - deployment: epito
+          service: large
+        filters:
+        - myfilter
+
+      - step: /cavity3d/multiConv/copy_mesh
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/inject_file
+        target:
+          deployment: local
+
+      - step: /cavity3d/multiConv/icoFoam
+        target:
+        - deployment: broadwell
+          service: parallel
+        - deployment: cascadelake
+          service: parallel
+        - deployment: epito
+          service: large
+        filters:
+        - myfilter
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-epito
+
+  broadwell:
+    type: slurm
+    config:
+      maxConcurrentJobs: 20
+      mounts: 
+      - /beegfs/home/gmalenza/src/workdir-broadwell
+      services:
+        sequential:
+          partition: broadwell
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/broadwell-facility.sh
+
+        parallel:
+          partition: broadwell
+          nodes: "2"
+          ntasksPerNode: 16
+          file: ../../facilities/broadwell-facility.sh
+
+        large:
+          partition: broadwell
+          nodes: "6"
+          ntasksPerNode: 16
+          file: ../../facilities/broadwell-facility.sh
+    workdir: ../../workdir-broadwell
+
+  cascadelake:
+    type: slurm
+    config:
+      maxConcurrentJobs: 20
+      mounts: 
+      - /beegfs/home/gmalenza/src/workdir-cascadelake
+      services:
+        sequential:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/cascadelake-facility.sh
+
+        parallel:
+          partition: cascadelake
+          nodes: "1"
+          ntasksPerNode: 32
+          file: ../../facilities/cascadelake-facility.sh
+
+        large:
+          partition: cascadelake 
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/cascadelake-facility.sh
+    workdir: ../../workdir-cascadelake
+
+  epito:
+    type: slurm
+    config:
+      maxConcurrentJobs: 20
+      mounts: 
+      - /beegfs/home/gmalenza/src/workdir-epito
+      services:
+        sequential:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/epito-facility.sh
+
+        parallel:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 32
+          file: ../../facilities/epito-facility.sh
+
+        large:
+          partition: epito
+          nodes: "3"
+          ntasksPerNode: 32
+          file: ../../facilities/epito-facility.sh
+    workdir: ../../workdir-epito
+
+  gracehopper:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: gracehopper
+          nodes: "1"
+          file: ../../facilities/gracehopper-facility.sh
+
+        parallel:
+          partition: gracehopper
+          nodes: "2"
+          file: ../../facilities/gracehopper-facility.sh
+    workdir: ../../workdir
+
+bindingFilters:
+  myfilter:
+    type: matching
+    config:
+      filters:
+      - target:
+          deployment: broadwell
+          service: parallel
+        job:
+        - port: size
+          match: "small"
+
+      - target:
+          deployment: cascadelake
+          service: parallel
+        job:
+        - port: size
+          match: "medium"
+
+      - target:
+          deployment: epito
+          service: large
+        job:
+        - port: size
+          match: "large"
+          
+database:
+  type: default 
+  config:
+    connection: /beegfs/home/gmalenza/src/Workflow-openfoam/workflow-openfoam/.streamflow/epito/sqlite.db

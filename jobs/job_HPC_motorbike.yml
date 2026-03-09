@@ -1,0 +1,38 @@
+case_dir:
+  class: Directory
+  path: ../cases/hpc_motorbike_S_v1912
+
+  
+  
+  # path: ../cases/motorbike
+
+
+
+# sizes: ["small", "medium"]
+# entries: [
+#   [ 
+#     # Small nothing 
+#   ],
+#   [ 
+#     # Medium
+#     {"key": "pointAndNormalDict.basePoint", "value": "( 0 0 0 )"}
+#   ]
+# ]
+
+
+sizes: ["small", "medium", "large"]
+
+entries: [
+  [ 
+    # Small nothing 
+  ],
+  [ 
+    # Medium
+    {"key": "pointAndNormalDict.basePoint", "value": "( 0 4 0 )"}
+  ],
+  [ 
+    # Large
+    {"key": "pointAndNormalDict.basePoint", "value": "( 0 4 0 )"},
+    {"key": "pointAndNormalDict.basePoint", "value": "( 0 12 0 )"}
+  ]
+]

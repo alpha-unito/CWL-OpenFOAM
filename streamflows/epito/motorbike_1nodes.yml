@@ -1,0 +1,99 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/motorbike-pipeline.cwl
+      settings: ../../jobs/job_motorbike.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /prepare_geometry
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /surface_features
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /blockmesh
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /toposet
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /restore0_processor
+        target:
+          deployment: epito
+          service: sequential
+
+      - step: /patchsummary
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /potential
+        target:
+          deployment: epito
+          service: parallel
+
+
+      - step: /simpleFoam
+        target:
+          deployment: epito
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: epito
+          service: sequential
+          
+      - step: /reconstruct
+        target:
+          deployment: epito
+          service: sequential
+
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-epito
+  epito:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/epito-facility.sh
+
+        parallel:
+          partition: epito
+          nodes: "1"
+          ntasksPerNode: 6
+          file: ../../facilities/epito-facility.sh
+    workdir: ../../workdir-epito

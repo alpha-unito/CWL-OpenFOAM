@@ -1,0 +1,30 @@
+case_dirs:
+- case_dir: 
+    class: Directory
+    path: ../cases/cavity3D/1M/fixedIter/
+  fvSolutions: 
+  - class: File
+    path: ../cases/cavity3D/1M/fixedIter/system/fvSolution 
+  - class: File
+    path: ../cases/cavity3D/1M/fixedTol/system/fvSolution
+  size: small
+- case_dir: 
+    class: Directory
+    path: ../cases/cavity3D/8M/fixedIter/
+  fvSolutions: 
+  - class: File
+    path: ../cases/cavity3D/8M/fixedIter/system/fvSolution 
+  - class: File
+    path: ../cases/cavity3D/8M/fixedTol/system/fvSolution
+  size: medium
+- case_dir: 
+    class: Directory
+    path: ../cases/cavity3D/64M/fixedIter/
+  fvSolutions: 
+  - class: File
+    path: ../cases/cavity3D/64M/fixedIter/system/fvSolution 
+  - class: File
+    path: ../cases/cavity3D/64M/fixedTol/system/fvSolution
+  size: large
+
+

@@ -1,0 +1,99 @@
+#!/usr/bin/env streamflow
+version: v1.0
+
+workflows:
+  motorbike-pipeline:
+    type: cwl
+    config:
+      file: ../../workflows/motorbike-pipeline.cwl
+      settings: ../../jobs/job_motorbike.yml
+    bindings:
+      - step: /copy_case
+        target:
+          deployment: local
+
+      - step: /prepare_geometry
+        target:
+          deployment: broadwell
+          service: sequential
+
+      - step: /surface_features
+        target:
+          deployment: broadwell
+          service: sequential
+
+      - step: /blockmesh
+        target:
+          deployment: broadwell
+          service: sequential
+
+      - step: /decompose
+        target:
+          deployment: broadwell
+          service: sequential
+
+      - step: /snappy
+        target:
+          deployment: broadwell
+          service: parallel
+
+      - step: /toposet
+        target:
+          deployment: broadwell
+          service: parallel
+
+      - step: /restore0_processor
+        target:
+          deployment: broadwell
+          service: sequential
+
+      - step: /patchsummary
+        target:
+          deployment: broadwell
+          service: parallel
+
+      - step: /potential
+        target:
+          deployment: broadwell
+          service: parallel
+
+      - step: /simpleFoam
+        target:
+          deployment: broadwell
+          service: parallel
+
+      - step: /reconstructParMesh
+        target:
+          deployment: broadwell
+          service: sequential
+          
+      - step: /reconstruct
+        target:
+          deployment: broadwell
+          service: sequential
+
+
+deployments:
+  local: 
+    type: local
+    config: {}
+    workdir: ../../workdir-broadwell
+  broadwell:
+    type: slurm
+    config:
+      maxConcurrentJobs: 1
+      services:
+        sequential:
+          partition: broadwell
+          nodes: "1"
+          ntasksPerNode: 1
+          file: ../../facilities/broadwell-facility.sh
+
+        parallel:
+          partition: broadwell
+          nodes: "1"
+          ntasksPerNode: 6
+          file: ../../facilities/broadwell-facility.sh
+    workdir: ../../workdir-broadwell
+
+
