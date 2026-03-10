@@ -42,7 +42,7 @@ inputs:
       prefix: -enableFunctionEntries
       position: 4
 
-  decompseDic:
+  decomposeDict:
     type: string
     default: system/decomposeParDict
     inputBinding:

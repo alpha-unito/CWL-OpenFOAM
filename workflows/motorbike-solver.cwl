@@ -86,7 +86,7 @@ steps:
         default: true
       writePhi:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 
@@ -97,7 +97,7 @@ steps:
       case_dir: potential/case_dir_out
       is_parallel:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 

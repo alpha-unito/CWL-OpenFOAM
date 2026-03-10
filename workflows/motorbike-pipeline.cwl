@@ -45,7 +45,7 @@ steps:
         default: true
       overwrite:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 
@@ -55,7 +55,7 @@ steps:
       case_dir: snappy/case_dir_out
       is_parallel:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 
@@ -71,7 +71,7 @@ steps:
       case_dir: restore0_processor/case_dir_out
       is_parallel:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 
@@ -83,7 +83,7 @@ steps:
         default: true
       writePhi:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 
@@ -93,7 +93,7 @@ steps:
       case_dir: potential/case_dir_out
       is_parallel:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 

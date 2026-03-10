@@ -45,7 +45,7 @@ steps:
         default: true
       overwrite:
         default: true
-      decompseDic:
+      decomposeDict:
         default: system/decomposeParDict
     out: [case_dir_out]
 

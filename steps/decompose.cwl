@@ -18,7 +18,7 @@ inputs:
     inputBinding:
       prefix: -case
       position: 1
-  decompseDic:
+  decomposeDict:
     type: string
     default: system/decomposeParDict
     inputBinding:

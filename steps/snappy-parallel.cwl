@@ -32,7 +32,7 @@ inputs:
       prefix: -overwrite
       position: 3
   
-  decompseDic:
+  decomposeDict:
     type: string
     default: system/decomposeParDict
     inputBinding:
